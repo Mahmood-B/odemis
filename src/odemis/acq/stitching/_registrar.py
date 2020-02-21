@@ -42,6 +42,25 @@ GOOD_MATCH = 0.9  # consider all registrations with match > GOOD_MATCH
 LEFT_TO_RIGHT = 1
 RIGHT_TO_LEFT = -1
 
+from PIL import Image, ImageEnhance
+
+#TODO K.K. remove this part
+def display_DA_as_img(DA, title = None, thumb=False):
+    min = numpy.iinfo(DA.dtype).min
+    max = numpy.iinfo(DA.dtype).max
+
+    if min != 0 and DA.min() < 0:
+        raise
+    elif max != 255:
+        DA = (DA/ max)*255
+        DA = DA.astype('uint8')
+
+    im = Image.fromarray(DA)
+    if thumb:
+        im.thumbnail(size=(500, 500))
+
+    im2 = ImageEnhance.Contrast(im)
+    im2.enhance(3).show()
 
 class IdentityRegistrar(object):
     """ Returns position as-is """
@@ -206,8 +225,12 @@ class ShiftRegistrar(object):
         tile_positions = []
         dep_tile_positions = []
 
+        # TODO K.K. remove this or implement differently
+        self.listed_shifts = [] # Made for Wilco, currenlty a debug value
         for ti in self.acqOrder:
+            #TODO K.K. if horizontal scanning switch ti to 1,0 error in acqOrder/registered positions + more
             shift = self.registered_positions[ti[0]][ti[1]]
+            self.listed_shifts.append(shift)
             tile_positions.append(((shift[0] + firstPosition[0]) * self.px_size[0],
                                    (firstPosition[1] - shift[1]) * self.px_size[1]))
 
@@ -330,7 +353,8 @@ class ShiftRegistrar(object):
         (l1, t1, r1, b1), (l2, t2, r2, b2) = self._estimateROI(shift)
         a = prev_tile[t1:b1, l1:r1]
         b = tile[t2:b2, l2:r2]
-        [x, y] = MeasureShift(b, a)
+        #TODO K.K. -1 is here to exclude black line
+        [x, y] = MeasureShift(b[:,:], a[:,:])
         return x, y
 
     def _register_horizontally(self, row, col, xdir):
