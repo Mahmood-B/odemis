@@ -34,6 +34,8 @@ import numpy
 import math
 from odemis import model
 import logging
+
+from odemis.util import almost_equal
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import minimum_spanning_tree
 from collections import deque
@@ -580,6 +582,11 @@ class GlobalShiftRegistrar(object):
                     self.tiles[i].append(None)
                     self.shifts_hor[i].append(None)
                     self.shifts_ver[i].append(None)
+        elif almost_equal(abs(ver_diff), abs(hor_diff)) and abs(hor_diff) > 0 and abs(ver_diff) > 0:
+            # TODO: Also implement registrar for tiles which are purely diagonally shifted. Currently this option is
+            #  not implemented.
+            raise NotImplementedError("Cannot insert tiles which have a pure diagonal shift, this functionality is "
+                                      "not yet implemented.")
         else:
             raise ValueError("Cannot insert multiple tiles at the same position.")
 
