@@ -6347,7 +6347,7 @@ def __init_resources():
                                             <value>-7 um</value>
                                             <fg>#2FA7D4</fg>
                                             <bg>#333333</bg>
-                                            <style>wxBORDER_NONE</style>
+                                            <style>wxBORDER_NONE|wxTE_PROCESS_ENTER</style>
                                             <XRCED>
                                               <assign_var>1</assign_var>
                                             </XRCED>
@@ -6388,7 +6388,7 @@ def __init_resources():
                                             <value>-7 um</value>
                                             <fg>#2FA7D4</fg>
                                             <bg>#333333</bg>
-                                            <style>wxBORDER_NONE</style>
+                                            <style>wxBORDER_NONE|wxTE_PROCESS_ENTER</style>
                                             <XRCED>
                                               <assign_var>1</assign_var>
                                             </XRCED>
