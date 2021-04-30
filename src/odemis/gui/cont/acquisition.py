@@ -37,7 +37,7 @@ import math
 from odemis import model, dataio
 from odemis.acq import align, acqmng, stream
 from odemis.acq.align.spot import OBJECTIVE_MOVE
-from odemis.acq.stream import UNDEFINED_ROI, ScannedTCSettingsStream, ScannedTemporalSettingsStream, TemporalSpectrumSettingsStream
+from odemis.acq.stream import EMStream, UNDEFINED_ROI, ScannedTCSettingsStream, ScannedTemporalSettingsStream, TemporalSpectrumSettingsStream, FluoStream
 from odemis.gui import conf
 from odemis.gui.acqmng import preset_as_is, get_global_settings_entries, \
     get_local_settings_entries, apply_preset
@@ -51,6 +51,7 @@ from odemis.gui.win.acquisition import AcquisitionDialog, OverviewAcquisitionDia
     ShowAcquisitionFileDialog
 from odemis.model import DataArrayShadow
 from odemis.util import units
+from odemis.util.comp import generate_zlevels
 from odemis.util.filename import guess_pattern, create_filename, update_counter
 import os
 import re
@@ -553,16 +554,29 @@ class CryoAcquiController(object):
         self._tab.streambar_controller.pause()
         self._panel.Layout()
 
-        # TODO use the function "generate_zlevels". The zrange
-        # is defined using the zMax and zMin obtained
-        # from the GUI from the user. Similarly for zStep. Pass
-        # the returned dictionary to the acquisition function below,
-        # after replacing "acquire" function with "acquireZStack".
-        self._acq_future = acqmng.acquire(
-            self._acquiStreams.value, self._tab_data.main.settings_obs
+        # prepare for zstack if required 
+        zlevels = {}
+        for s in self._acquiStreams.value:
+            if isinstance(s, FluoStream):
+                if self._zStackActive.value:  # if zstack
+                    levels = generate_zlevels(
+                        self._tab_data.main.focus,
+                        [self._tab_data.zMin.value, self._tab_data.zMax.value],
+                        self._tab_data.zStep.value,
+                    )
+                    zlevels[s] = list(levels)
+                else:  # if no zstack
+                    zlevels[s] = [s.focuser.position.value["z"]]
+            elif isinstance(s, EMStream):
+                zlevels[s] = [s.focuser.position.value["z"]]
+
+        # acquire the data 
+        self._acq_future = acqmng.acquireZStack(
+            self._acquiStreams.value, zlevels, self._tab_data.main.settings_obs
         )
         self._tab_data.main.is_acquiring.value = True
         logging.info("Acquisition started")
+
         # link the acquisition gauge to the acquisition future
         self._gauge_future_conn = ProgressiveFutureConnector(
             future=self._acq_future,
